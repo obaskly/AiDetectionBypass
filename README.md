@@ -5,7 +5,7 @@ This script automates the process of registering on gptinf.com, a website that m
 ## Features
 
 - Automated Account Creation: Automatically registers new accounts using temporary email addresses.
-- reCAPTCHA Bypass: Handles reCAPTCHA challenges during the registration process.
+- reCAPTCHA Bypass: Bypass reCAPTCHA challenges during the registration process using audio bypass technique.
 - Text Paraphrasing: Breaks down large text into chunks, paraphrases each chunk, and saves the results.
 - Account Management: When paraphrasing exceeds the word limit per account, the script creates a new account and continues.
 - Clipboard Integration: Retrieves paraphrased text directly from the clipboard.
@@ -39,8 +39,8 @@ Sit back and relax while the script paraphrases your article!
 
 - Python 3.x
 - Google Chrome installed (chromedriver is used by Selenium)
-  
+
 ## Script in action
 
-
+https://github.com/user-attachments/assets/9eb883f3-f0a2-42b5-bd8c-a727fdde083c
 
