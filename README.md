@@ -12,27 +12,41 @@ This script automates the process of registering on gptinf.com, a website that m
 
 ## Usage
 
-1. Clone this repository to your local machine.
+1. **Clone this repository to your local machine**
 
 ```bash
 git clone https://github.com/obaskly/AiDetectionBypass.git
+cd AiDetectionBypass
 ```
 
-2. Install the required Python packages.
+2. **Install the required Python packages**
 
   ```bash
   pip install -r requirements.txt
   ```
 
-Prepare your article in a text file (e.g., article.txt), or paste it directly.
+3. **Install FFmpeg**
 
-3. Run the script.
+- Linux:
+
+  ```
+  sudo apt-get update
+  sudo apt-get install ffmpeg
+  ```
+  
+- Windows:
+
+  Follow this tutorial: https://www.wikihow.com/Install-FFmpeg-on-Windows
+
+4. **Run the script**
+
+Prepare your article in a text file (e.g., article.txt), or paste it directly.
 
   ```bash
   python main.py
   ```
 
-4. The script will create an `accounts.txt` file with temporary email accounts and save the paraphrased content to `paraphrased_text.txt`.
+5. The script will create an `accounts.txt` file with temporary email accounts and save the paraphrased content to `paraphrased_text.txt`.
 Sit back and relax while the script paraphrases your article!
 
 ## Prerequisites
