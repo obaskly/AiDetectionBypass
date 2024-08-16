@@ -1,0 +1,4 @@
+selenium
+tempmail-python
+pyperclip
+fake-useragent
