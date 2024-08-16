@@ -2,3 +2,6 @@ selenium
 tempmail-python
 pyperclip
 fake-useragent
+pydub
+SpeechRecognition
+aiohttp
