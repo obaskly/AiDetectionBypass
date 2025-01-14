@@ -1,6 +1,6 @@
 # 📝 Ai Text Detection Bypass Script
 
-This script automates the process of registering on [gptinf.com](https://www.gptinf.com/), a website that makes text undetectable by AI detection tools. The script uses Selenium for browser automation, including bypassing reCAPTCHA, registering with temporary email addresses, and paraphrasing large blocks of text. If the input text exceeds the website's limit, the script creates new accounts as needed and continues processing.
+This script automates the process of registering on [gptinf.com](https://www.gptinf.com/), a website that makes text undetectable by AI detection tools. The script uses Selenium for browser automation, including bypassing reCAPTCHA, registering with generated gmail email addresses, and paraphrasing large blocks of text. If the input text exceeds the website's limit, the script creates new accounts as needed and continues processing.
 
 ## ✨ What's New?
 You can Try the Other tool as well https://github.com/obaskly/AiTextDetectionBypass
