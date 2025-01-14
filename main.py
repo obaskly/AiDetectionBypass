@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import WebDriverException
 from RecaptchaSolver import RecaptchaSolver
-from tempmail import EMail
+from email_utils import authenticate_gmail, generate_gmail_variation, get_gmail_service, extract_verify_link, get_message_body, wait_for_confirmation_email
 from fake_useragent import UserAgent
 import time
 import re
@@ -17,27 +17,28 @@ import sys
 import random
 
 
-ua = UserAgent()
-user_agent = ua.random
-options = webdriver.ChromeOptions()
-chrome_prefs = {
-    "profile.default_content_setting_values": {
-        "clipboard": 1
+def setup_driver():
+    ua = UserAgent()
+    user_agent = ua.random
+    options = webdriver.ChromeOptions()
+    chrome_prefs = {
+        "profile.default_content_setting_values": {
+            "clipboard": 1
+        }
     }
-}
 
-options.add_argument("--no-sandbox")
-options.add_argument("--log-level=3")
-options.add_argument('--no-proxy-server')
-options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
-options.add_argument(f"user-agent={user_agent}")
-options.add_experimental_option('useAutomationExtension', False)
-options.add_argument("--disable-extensions")
-options.add_argument("--disable-gpu")
-options.add_argument("--start-maximized")
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_argument(f"user-data-dir=/tmp/{random.randint(0, 10000)}")
-options.add_experimental_option("prefs", chrome_prefs)
+    options.add_argument("--no-sandbox")
+    options.add_argument("--log-level=3")
+    options.add_argument('--no-proxy-server')
+    options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
+    options.add_argument(f"user-agent={user_agent}")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--start-maximized")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument(f"user-data-dir=/tmp/{random.randint(0, 10000)}")
+    options.add_experimental_option("prefs", chrome_prefs)
+    return webdriver.Chrome(options=options)
 
 def get_user_input():
     choice = input("Enter '1' to input text directly or '2' to select a text file: ")
@@ -53,8 +54,12 @@ def get_user_input():
         if not os.path.exists(file_path):
             print("File not found.")
             sys.exit()
-        with open(file_path, 'r') as file:
-            user_text = file.read()
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                user_text = file.read()
+        except UnicodeDecodeError:
+            print("Could not read the file. Please ensure the file is UTF-8 encoded.")
+            sys.exit()
         if len(user_text.split()) < 30:
             print("The text must contain at least 30 words.")
             sys.exit()
@@ -145,9 +150,7 @@ def paraphrase_text(driver, text_chunk):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-def create_new_account():
-    driver = webdriver.Chrome(options=options)
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+def create_new_account(driver, base_email):
     driver.get("https://app.gptinf.com/signup/start")
     recaptchaSolver = RecaptchaSolver(driver)
 
@@ -158,12 +161,12 @@ def create_new_account():
         print(f"Time to solve the captcha: {time.time() - t0:.2f} seconds")
         
         # Wait and enter the email
-        email = EMail()
+        email_variant = generate_gmail_variation(base_email)
         email_input_xpath = '//*[@id="__next"]/main/div/div/form/div[1]/input'
-        print(f"Generated Email: {email.address}")
+        print(f"Generated Email: {email_variant}")
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, email_input_xpath))
-        ).send_keys(str(email.address))  # Replace with the actual email
+        ).send_keys(str(email_variant))
         
         # Wait and click the submit button
         submit_button_xpath = '/html/body/div[1]/main/div/div/form/button'
@@ -173,79 +176,26 @@ def create_new_account():
         submit_button.click()
         print("Submit button clicked successfully.")
 
-        # Function to check for the confirmation email and resend if necessary
-        def wait_for_confirmation_email(max_attempts, initial_wait, decrement):
-            attempts = 0
-            while attempts < max_attempts:
-                attempts += 1
-                print(f"Attempt {attempts} to receive the confirmation code.")
-                
-                # Wait for the initial wait time before checking for the message
-                time.sleep(initial_wait)
-                
-                # Check if the email has arrived
-                try:
-                    msg = email.wait_for_message()  # Wait indefinitely for the email to arrive
-                    email_body = msg.body
-                    
-                    # Extract the confirmation code using regex
-                    match = re.search(r'<strong>(\d+)</strong>', email_body)
-                    if match:
-                        confirmation_code = match.group(1)
-                        print(f"Confirmation Code: {confirmation_code}")
-                        return confirmation_code
-                    else:
-                        print("Confirmation code not found in the email body.")
-                
-                except Exception as e:
-                    print(f"Error while waiting for email: {e}")
-                
-                # If the code is not received, click the resend button
-                try:
-                    resend_button_xpath = '/html/body/div[1]/main/div/div/email'
-                    resend_button = WebDriverWait(driver, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, resend_button_xpath))
-                    )
-                    resend_button.click()
-                    print("Resend email button clicked.")
-                    
-                    # Reduce the wait time for the next attempt
-                    initial_wait = max(1, initial_wait - decrement)
-
-                except Exception as e:
-                    print(f"Failed to click the resend email button: {e}")
-                    break  # Stop further attempts if resend button click fails
+        try:
+            creds = authenticate_gmail()
+            service = get_gmail_service(creds)
+            confirmation_email = wait_for_confirmation_email(service)
             
-            # If the code is not received after all attempts, return None
-            return None
-
-        # Attempt to get the confirmation code with retries
-        confirmation_code = wait_for_confirmation_email(max_attempts=3, initial_wait=5, decrement=1)
-
-        # If the confirmation code wasn't received after retries, restart the process
-        if confirmation_code is None:
-            print("Confirmation code was not received after multiple attempts. Restarting the process.")
-            driver.quit()
-            return create_new_account()
-
-        # Enter the confirmation code into the input fields
-        input_xpaths = [
-            '/html/body/div[1]/main/div/div/div[4]/input[1]',
-            '/html/body/div[1]/main/div/div/div[4]/input[2]',
-            '/html/body/div[1]/main/div/div/div[4]/input[3]',
-            '/html/body/div[1]/main/div/div/div[4]/input[4]',
-            '/html/body/div[1]/main/div/div/div[4]/input[5]',
-            '/html/body/div[1]/main/div/div/div[4]/input[6]'
-        ]
-
-        if len(confirmation_code) == len(input_xpaths):
-            for i, digit in enumerate(confirmation_code):
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, input_xpaths[i]))
-                ).send_keys(digit)
-            print("Confirmation code entered successfully.")
-        else:
-            print("Confirmation code length does not match the number of input fields.")
+            if confirmation_email:
+                message_body = get_message_body(confirmation_email)
+                verify_link = extract_verify_link(message_body)
+            
+                if verify_link:
+                    try:
+                        driver.get(verify_link)
+                        print("Navigated to the verification link successfully.")
+                    except Exception as e:
+                        print(f"Error navigating to the verification link: {e}")
+                else:
+                    print("No verification link found.")
+                
+        except Exception as e:
+            print(f"Error while waiting for email: {e}")
 
         # Generate a password
         password_length = 12  # You can adjust the length as needed
@@ -255,7 +205,7 @@ def create_new_account():
 
         # Save the email and password to the accounts file
         with open('accounts.txt', 'a') as f:
-            f.write(f"{str(email.address)}:{str(password)}\n")
+            f.write(f"{str(email_variant)}:{str(password)}\n")
         print("Account saved to file successfully.")
 
         # Enter the password and confirm it
@@ -290,36 +240,63 @@ def create_new_account():
         print(f"An error occurred: {e}")
         driver.quit()
 
-    return driver
-
-def process_paraphrasing(chunks):
+def process_paraphrasing(chunks, base_email):
     total_paraphrased_words = 0
     paraphrased_texts = []
-    driver = create_new_account()
+    driver = None
 
-    for chunk in chunks:
-        if total_paraphrased_words + len(chunk.split()) > 3000:
-            # Re-initialize the driver and login to a new account
+    try:
+        for chunk in chunks:
+            if driver is None or total_paraphrased_words + len(chunk.split()) > 3000:
+                # Ensure the previous driver is closed
+                if driver:
+                    driver.quit()
+                
+                # Create a new account and driver
+                confirmation_code = None
+                driver = setup_driver()
+                create_new_account(driver, base_email)
+
+                total_paraphrased_words = 0
+
+            # Use the driver to paraphrase the chunk
+            paraphrased_text = paraphrase_text(driver, chunk)
+            paraphrased_texts.append(paraphrased_text)
+            total_paraphrased_words += len(chunk.split())
+
+    except Exception as e:
+        print(f"An error occurred during paraphrasing: {e}")
+    
+    finally:
+        if driver:
             driver.quit()
-            driver = create_new_account()
-            total_paraphrased_words = 0
 
-        paraphrased_text = paraphrase_text(driver, chunk)
-        paraphrased_texts.append(paraphrased_text)
-        total_paraphrased_words += len(chunk.split())
-
-    driver.quit()
     return paraphrased_texts
 
-user_text = get_user_input()
-chunks = list(split_text(user_text, 1000))
+def main():
+    try:
+        # Get user input
+        user_text = get_user_input()
 
-paraphrased_texts = process_paraphrasing(chunks)
+        # Split text into chunks
+        chunks = list(split_text(user_text, 1000))
 
-# Save the paraphrased text to a file
-output_file = "paraphrased_text.txt"
-with open(output_file, 'w') as file:
-    for text in paraphrased_texts:
-        file.write(text + '\n')
+        # Get the base email
+        base_email = input("Enter your Gmail address: ")
 
-print("Paraphrasing completed. Output saved to", output_file)
+        # Process paraphrasing
+        paraphrased_texts = process_paraphrasing(chunks, base_email)
+
+        # Save the paraphrased text to a file
+        output_file = "paraphrased_text.txt"
+        with open(output_file, 'w') as file:
+            for text in paraphrased_texts:
+                file.write(text + '\n')
+
+        print("Paraphrasing completed. Output saved to", output_file)
+    
+    except Exception as e:
+        print(f"An error occurred in the script: {e}")
+
+if __name__ == "__main__":
+    main()
