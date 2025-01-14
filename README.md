@@ -80,6 +80,9 @@ Prepare your article in a text file (e.g., article.txt), or paste it directly.
 5. The script will create an `accounts.txt` file with generated emails and save the paraphrased content to `paraphrased_text.txt`.
 Sit back and relax while the script paraphrases your article!
 
+**Note: First time using the script will require getting the token file. When the webpage is open, click on the same email that you have entered in the terminal. Close the script and run it again.
+This is a one time process so you won't have to do it again.**
+
 ## Prerequisites
 
 - Python 3.x
