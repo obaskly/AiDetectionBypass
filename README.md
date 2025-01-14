@@ -87,8 +87,8 @@ Sit back and relax while the script paraphrases your article!
 
 ## TODO List
 
-- [] Make a GUI.
-- [] Choose between the default word-based splitting method or a more advanced NLTK-powered sentence-preserving approach.
+- [ ] Make a GUI.
+- [ ] Choose between the default word-based splitting method or a more advanced NLTK-powered sentence-preserving approach.
 
 ## Script in action
 
