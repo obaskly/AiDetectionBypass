@@ -92,6 +92,7 @@ This is a one time process so you won't have to do it again.**
 
 - [ ] Make a GUI.
 - [ ] Choose between the default word-based splitting method or a more advanced NLTK-powered sentence-preserving approach.
+- [ ] Integrate 2captcha api and let the user choose what service to use for captcha solving.
 
 ## Script in action
 
