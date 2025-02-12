@@ -25,7 +25,7 @@ def authenticate_gmail():
     # If there are no valid credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())  # This was causing the error
+            creds.refresh(Request()) 
         else:
             credentials_path = os.path.join('json_files', 'credentials.json')
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
